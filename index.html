@@ -13,6 +13,34 @@
       height: 100vh;
       overflow: hidden;
       touch-action: manipulation;
+      position: relative;
+    }
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 6px;
+      background: rgba(255, 215, 0, 0.2);
+      z-index: 1000;
+      transition: width 0.8s ease;
+    }
+    #journey-path {
+      position: fixed;
+      top: 6px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 5%;
+      z-index: 1001;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    .path-icon { transition: all 0.5s ease; }
+    .path-icon.active { 
+      opacity: 1; 
+      text-shadow: 0 0 10px #ffd700;
+      transform: scale(1.3);
     }
     #game-container {
       position: relative;
@@ -22,9 +50,10 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 20px 10px 100px; /* Space for character at bottom */
       text-align: center;
-      transition: background 1.5s ease;
+      transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
     }
     .room-1 { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
     .room-2 { background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%); }
@@ -35,242 +64,408 @@
     .room-7 { background: linear-gradient(135deg, #16a085 0%, #2c3e50 100%); }
     .room-8 { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); }
     .room-final { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+
+    /* CHARACTER SYSTEM - PHYSICAL PROGRESSION */
+    #character-container {
+      position: fixed;
+      bottom: 30px;
+      left: 10%; /* Updates per room */
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: left 1.5s cubic-bezier(0.4, 0, 0.2, 1), transform 1.5s ease;
+      pointer-events: none;
+    }
     #character {
-      font-size: 64px;
-      margin: 20px 0;
-      transition: transform 1.2s ease, opacity 1.2s ease;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
-      animation: pulse 3s infinite;
+      font-size: 48px;
+      transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+      position: relative;
     }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
+    #character-label {
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(255, 215, 0, 0.9);
+      opacity: 0.8;
+      font-weight: bold;
+      white-space: nowrap;
     }
-    #character.small { transform: scale(0.7); }
-    #character.medium { transform: scale(0.9); }
-    #character.large { transform: scale(1.1); }
-    #character.xlarge { transform: scale(1.3); }
-    #character.elder { transform: scale(1.2) rotate(-5deg); opacity: 0.9; }
+    /* Stage-specific transformations */
+    .stage-1 { transform: scale(0.85); } /* Niño pequeño */
+    .stage-2 { transform: scale(0.95); } /* Niño */
+    .stage-3 { transform: scale(1); }    /* Pre-adol */
+    .stage-4 { transform: scale(1.05); } /* Adolescente */
+    .stage-5 { transform: scale(1.1); }  /* Joven */
+    .stage-6 { transform: scale(1.15); } /* Adulto joven */
+    .stage-7 { 
+      transform: scale(1.1) rotate(-2deg); 
+      filter: grayscale(0.2);
+    } /* Adulto */
+    .stage-8 { 
+      transform: scale(1) rotate(-4deg); 
+      filter: grayscale(0.4);
+      opacity: 0.95;
+    } /* Anciano */
+    .stage-9 { 
+      transform: scale(0.85); 
+      text-shadow: 0 0 25px rgba(255, 215, 0, 1);
+      animation: pulse-gold 2s infinite;
+    } /* Niño renacido */
+    
+    /* Bastón para etapas avanzadas (CSS puro) */
+    #character::after {
+      content: "";
+      position: absolute;
+      bottom: -25px;
+      left: 15px;
+      width: 8px;
+      height: 35px;
+      background: linear-gradient(to bottom, #8B4513 70%, #5D4037 100%);
+      border-radius: 2px;
+      transform: rotate(15deg);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .stage-7::after, .stage-8::after { opacity: 1; }
+    
+    /* Canas para anciano */
+    .stage-8 { 
+      position: relative;
+    }
+    .stage-8::before {
+      content: "";
+      position: absolute;
+      top: -15px;
+      left: -5px;
+      width: 60px;
+      height: 20px;
+      background: 
+        radial-gradient(circle at 10px 10px, #e0e0e0 2px, transparent 3px),
+        radial-gradient(circle at 25px 5px, #e0e0e0 2px, transparent 3px),
+        radial-gradient(circle at 40px 12px, #e0e0e0 2px, transparent 3px);
+      opacity: 0.85;
+    }
+    
+    @keyframes pulse-gold {
+      0%, 100% { text-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
+      50% { text-shadow: 0 0 30px rgba(255, 215, 0, 1.2); }
+    }
+    @keyframes walk {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .walking { animation: walk 0.6s infinite; }
+
     #narrative {
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 15px;
-      padding: 25px;
-      margin: 20px 0;
-      max-width: 90%;
-      font-size: 18px;
-      line-height: 1.6;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      border: 2px solid rgba(255, 215, 0, 0.3);
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 18px;
+      padding: 28px;
+      margin: 25px 0;
+      max-width: 92%;
+      font-size: 19px;
+      line-height: 1.65;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6);
+      border: 2px solid rgba(255, 215, 0, 0.25);
+      z-index: 10;
+      position: relative;
     }
     #narrative h2 {
       color: #ffd700;
-      margin-bottom: 15px;
-      font-size: 24px;
+      margin-bottom: 18px;
+      font-size: 26px;
+      letter-spacing: -0.5px;
     }
     #narrative p {
-      margin: 10px 0;
-      color: #e0e0e0;
+      margin: 12px 0;
+      color: #f0f2f5;
+      font-weight: 300;
     }
     #puzzle-container {
-      background: rgba(20, 20, 30, 0.9);
-      border-radius: 20px;
-      padding: 30px;
-      width: 95%;
-      max-width: 500px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
-      border: 3px solid rgba(255, 215, 0, 0.4);
+      background: rgba(25, 25, 35, 0.92);
+      border-radius: 22px;
+      padding: 32px 25px;
+      width: 94%;
+      max-width: 520px;
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75);
+      border: 3px solid rgba(255, 215, 0, 0.35);
+      z-index: 10;
+      position: relative;
     }
     .puzzle-title {
       color: #ffd700;
-      font-size: 22px;
-      margin-bottom: 20px;
+      font-size: 23px;
+      margin-bottom: 22px;
       font-weight: bold;
+      letter-spacing: -0.5px;
     }
     input[type="text"], textarea {
       width: 100%;
-      padding: 15px;
-      margin: 15px 0;
-      border: 2px solid #ffd700;
-      border-radius: 10px;
-      background: rgba(30, 30, 40, 0.9);
-      color: #ffd700;
-      font-size: 18px;
+      padding: 16px;
+      margin: 16px 0;
+      border: 2px solid #5a5a72;
+      border-radius: 12px;
+      background: rgba(35, 35, 50, 0.85);
+      color: #e6e7eb;
+      font-size: 19px;
       text-align: center;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #ffd700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
     }
     input[type="text"]::placeholder, textarea::placeholder {
-      color: rgba(255, 215, 0, 0.5);
+      color: rgba(200, 200, 220, 0.6);
+      font-style: italic;
     }
     button {
-      background: linear-gradient(135deg, #ffd700 0%, #ff6b6b 100%);
+      background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
       color: #1a1a2e;
       border: none;
-      padding: 15px 40px;
-      margin: 10px 5px;
-      border-radius: 50px;
-      font-size: 18px;
+      padding: 16px 45px;
+      margin: 12px 5px;
+      border-radius: 55px;
+      font-size: 19px;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 18px rgba(255, 170, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      z-index: 5;
     }
     button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+      box-shadow: 0 8px 22px rgba(255, 170, 0, 0.55);
     }
     button:active {
       transform: translateY(1px);
+      box-shadow: 0 4px 12px rgba(255, 170, 0, 0.4);
     }
     button.secondary {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
       color: #ffd700;
       border: 2px solid #ffd700;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    button.secondary:hover {
+      background: rgba(255, 215, 0, 0.25);
+      transform: translateY(-1px);
     }
     .hint {
-      background: rgba(255, 215, 0, 0.1);
-      border-left: 4px solid #ffd700;
-      padding: 15px;
-      margin: 20px 0;
-      border-radius: 0 10px 10px 0;
-      text-align: left;
-      font-style: italic;
-      color: #ffd700;
-      display: none; /* OCULTAMOS TODAS LAS PISTAS POR DEFECTO */
-    }
-    .hint-title {
-      color: #ff6b6b;
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
+      display: none; /* OCULTO COMPLETAMENTE - CONFIRMADO */
     }
     .success {
-      color: #00ff9d;
+      color: #00e676;
       font-weight: bold;
-      margin: 15px 0;
-      font-size: 20px;
-      animation: fadeIn 0.5s;
+      margin: 18px 0;
+      font-size: 21px;
+      animation: fadeIn 0.4s;
     }
     .error {
-      color: #ff6b6b;
+      color: #ff5252;
       font-weight: bold;
-      margin: 15px 0;
-      font-size: 18px;
-      animation: shake 0.5s;
+      margin: 18px 0;
+      font-size: 19px;
+      animation: shake 0.4s;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes shake { 
+    @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
     }
+    
+    /* ROOM 3: ORIENTATION DOOR */
     #orientation-door {
-      font-size: 80px;
-      margin: 20px 0;
+      font-size: 85px;
+      margin: 25px 0;
       display: inline-block;
-      transform: rotate(90deg); /* PUERTA GIRADA VERTICALMENTE */
-      transition: transform 0.3s ease;
+      transform: rotate(90deg);
+      transition: transform 0.4s ease;
     }
     @media (orientation: landscape) {
-      #portrait-instruction { display: none !important; }
-      #landscape-instruction { display: block !important; }
-      #orientation-door { transform: rotate(0deg) !important; }
+      #orientation-door { transform: rotate(0deg); }
+      #landscape-btn-container { display: block; }
     }
-    #portrait-instruction, #landscape-instruction {
-      margin: 20px 0;
-      font-size: 20px;
-      font-weight: bold;
+    #landscape-btn-container { 
+      display: none; 
+      margin-top: 20px;
     }
-    #mic-container {
-      text-align: center;
-      margin: 20px 0;
-    }
-    #mic-visualizer {
-      width: 100%;
-      height: 100px;
-      background: rgba(30, 30, 40, 0.8);
-      border-radius: 15px;
-      margin: 20px 0;
+    
+    /* ROOM 5: THREE EMOJIS */
+    .breath-options {
       display: flex;
-      align-items: flex-end;
       justify-content: center;
-      overflow: hidden;
-      border: 2px solid #ffd700;
-    }
-    .mic-bar {
-      width: 15px;
-      height: 5px;
-      background: #ffd700;
-      margin: 0 2px;
-      border-radius: 5px;
-      transition: height 0.05s ease;
-    }
-    .hidden-text {
-      color: rgba(255, 255, 255, 0.98); /* BLANCO CASI PURO */
-      background: rgba(255, 255, 255, 0.98);
-      padding: 8px 15px;
-      border-radius: 8px;
+      gap: 35px;
       margin: 25px 0;
-      font-size: 18px;
-      user-select: all;
-      -webkit-user-select: all;
-      cursor: default; /* SIN CURSOR DE SELECCIÓN OBVIO */
-      letter-spacing: 2px; /* MÁS DISCRETO */
+      font-size: 42px;
+      cursor: pointer;
     }
-    #final-text {
-      font-size: 24px;
-      line-height: 1.8;
+    .breath-option {
+      transition: transform 0.2s ease, filter 0.2s ease;
+      user-select: none;
+    }
+    .breath-option:hover { transform: scale(1.15); }
+    .breath-option.inactive { 
+      opacity: 0.7; 
+      filter: grayscale(0.6);
+    }
+    .breath-option.inactive:hover { 
+      transform: scale(1.05) rotate(2deg);
+      filter: grayscale(0.3) brightness(1.1);
+    }
+    
+    /* ROOM 7: 8 EMOJIS IN CIRCLE */
+    .touch-circle-container {
+      width: 280px;
+      height: 280px;
+      position: relative;
+      margin: 30px auto;
+    }
+    .touch-point {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      cursor: pointer;
+      background: rgba(255, 215, 0, 0.12);
+      border: 2px solid rgba(255, 215, 0, 0.4);
+      transition: all 0.25s ease;
+      user-select: none;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+    .touch-point:hover { 
+      transform: scale(1.15) translateY(-3px);
+      background: rgba(255, 215, 0, 0.25);
+      z-index: 10;
+    }
+    .touch-point.correct { 
+      background: rgba(0, 230, 118, 0.35); 
+      transform: scale(1.25) !important;
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.7);
+      z-index: 20;
+    }
+    .touch-point.error { 
+      background: rgba(255, 82, 82, 0.3); 
+      transform: scale(1.1) !important;
+      box-shadow: 0 0 25px rgba(255, 82, 82, 0.8);
+    }
+    /* Position 8 emojis in a circle */
+    .pos-1 { top: 20%; left: 50%; transform: translate(-50%, -50%); }
+    .pos-2 { top: 40%; left: 75%; transform: translate(-50%, -50%); }
+    .pos-3 { top: 70%; left: 75%; transform: translate(-50%, -50%); }
+    .pos-4 { top: 85%; left: 50%; transform: translate(-50%, -50%); }
+    .pos-5 { top: 70%; left: 25%; transform: translate(-50%, -50%); }
+    .pos-6 { top: 40%; left: 25%; transform: translate(-50%, -50%); }
+    .pos-7 { top: 30%; left: 60%; transform: translate(-50%, -50%); }
+    .pos-8 { top: 60%; left: 40%; transform: translate(-50%, -50%); }
+    
+    /* ROOM 8: ECHO PUZZLE */
+    #echo-hint {
+      margin-top: 20px;
+      font-style: italic;
       color: #ffd700;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
-      margin: 40px 0;
-      padding: 30px;
-      background: rgba(0, 0, 0, 0.6);
-      border-radius: 20px;
+      min-height: 24px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #echo-hint.show { opacity: 1; }
+    
+    /* FINAL SCENE */
+    #final-text {
+      font-size: 26px;
+      line-height: 1.7;
+      color: #ffd700;
+      text-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+      margin: 45px 0;
+      padding: 35px;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 24px;
       border: 3px solid #ffd700;
+      max-width: 85%;
     }
-    #progress-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 8px;
-      background: rgba(255, 215, 0, 0.3);
-      z-index: 1000;
-      transition: width 0.5s ease;
+    
+    /* TRANSITION EFFECTS */
+    .room-transition {
+      opacity: 0.2;
+      filter: blur(5px);
+      transition: opacity 0.6s, filter 0.6s;
     }
+    
+    /* MOBILE OPTIMIZATION */
     @media (max-width: 480px) {
-      #character { font-size: 50px; }
-      #narrative { font-size: 16px; padding: 20px; }
-      input[type="text"], textarea { padding: 12px; font-size: 16px; }
-      button { padding: 12px 30px; font-size: 16px; }
+      #character { font-size: 42px; }
+      #character-label { font-size: 13px; }
+      #narrative { font-size: 17px; padding: 24px 20px; }
+      #narrative h2 { font-size: 24px; }
+      input[type="text"], textarea { padding: 14px; font-size: 17px; }
+      button { padding: 14px 38px; font-size: 17px; }
+      .breath-options { gap: 25px; font-size: 38px; }
+      .touch-circle-container { width: 250px; height: 250px; }
+      .touch-point { width: 55px; height: 55px; font-size: 26px; }
+      #final-text { font-size: 23px; padding: 28px; }
     }
   </style>
 </head>
 <body>
   <div id="progress-bar"></div>
+  <div id="journey-path">
+    <span class="path-icon active">🌱</span>
+    <span class="path-icon">🧩</span>
+    <span class="path-icon">🚪</span>
+    <span class="path-icon">⏰</span>
+    <span class="path-icon">💨</span>
+    <span class="path-icon">🧵</span>
+    <span class="path-icon">🌑</span>
+    <span class="path-icon">🚪</span>
+    <span class="path-icon">✨</span>
+  </div>
+  
   <div id="game-container" class="room-1">
-    <div id="character" class="small">👶</div>
     <div id="narrative">
       <h2>🌱 Sala 1: El Jardín de los Secretos</h2>
       <p><em>"Pequeña semilla... los secretos no se esconden. Solo esperan a que aprendas a mirar sin ver."</em></p>
     </div>
     <div id="puzzle-container">
       <div class="puzzle-title">El Espejo Roto</div>
-      <div class="hidden-text">LIBERTAD</div>
-      <input type="text" id="clipboard-input" placeholder="¿Qué ves?" autocomplete="off">
-      <button id="submit-1">Confirmar</button>
-      <div class="hint">
-        <span class="hint-title">Reflexión:</span>
-        A veces lo que buscas está frente a ti... pero necesitas mirar desde dentro.
-      </div>
-      <div id="feedback-1"></div>
+      <div style="color:rgba(255,255,255,0.98);background:rgba(255,255,255,0.98);padding:10px 20px;border-radius:10px;margin:25px 0;font-size:20px;letter-spacing:2px;user-select:all;-webkit-user-select:all;">LIBERTAD</div>
+      <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+      <button id="submit-btn">Confirmar</button>
+      <div id="feedback"></div>
     </div>
+  </div>
+  
+  <div id="character-container">
+    <div id="character" class="stage-1 walking">👶</div>
+    <div id="character-label">Pequeña semilla</div>
   </div>
 
   <script>
+    // GAME STATE - CHARACTER PHYSICAL PROGRESSION IS CORE
     const gameState = {
       currentRoom: 1,
       characterStage: 1,
-      solved: [false, false, false, false, false, false, false, false],
+      characterPositions: ['10%', '18%', '26%', '34%', '42%', '50%', '58%', '66%', '10%'], // 9 stages (final rebirth returns to start)
       characterEmojis: ['👶', '👦', '🧒', '🧑', '👨', '🧔', '👴', '🧓', '👶'],
-      characterClasses: ['small', 'medium', 'medium', 'large', 'large', 'xlarge', 'xlarge', 'elder', 'small'],
+      characterStages: ['stage-1', 'stage-2', 'stage-3', 'stage-4', 'stage-5', 'stage-6', 'stage-7', 'stage-8', 'stage-9'],
+      characterLabels: [
+        'Pequeña semilla', 
+        'Brote que pregunta', 
+        'Tallo que busca el sol', 
+        'Rama que se dobla', 
+        'Árbol con primer fruto', 
+        'Tronco con cicatrices', 
+        'Raíz en la oscuridad', 
+        'Bosque de ciclos', 
+        'Semilla que recuerda'
+      ],
       roomClasses: ['room-1', 'room-2', 'room-3', 'room-4', 'room-5', 'room-6', 'room-7', 'room-8', 'room-final'],
       narratives: [
         { title: '🌱 Sala 1: El Jardín de los Secretos', text: '"Pequeña semilla... los secretos no se esconden. Solo esperan a que aprendas a mirar sin ver."' },
@@ -280,356 +475,468 @@
         { title: '💨 Sala 5: El Valle del Aliento', text: '"Árbol que sostiene su primer fruto... a veces lo que falta no es fuerza. Es aliento."' },
         { title: '🧵 Sala 6: El Telar de los Días', text: '"Tronco que carga cicatrices... si ayer fuera mañana, ¿dónde quedaría hoy atrapado?"' },
         { title: '🌑 Sala 7: La Cámara del Eco', text: '"Raíz que abraza la oscuridad... la luz ciega. Solo en la sombra aprendes a ver con el alma. Toca primero tu corazón, luego tu mente, y finalmente tus manos. Así verás lo que la luz esconde."' },
-        { title: '🚪 Sala 8: La Puerta Final', text: '"Bosque que conoce todos los ciclos... una puerta lleva al conocimiento. La otra, a la paz. Una pregunta. Una elección."' },
+        { title: '🚪 Sala 8: La Puerta Final', text: '"Bosque que conoce todos los ciclos... una última pregunta resonará en la eternidad: Hablo sin boca, escucho sin oídos, y nado en el viento. ¿Qué soy?"' },
         { title: '✨ El Regreso', text: '"Mira: vuelves a ser quien eras. Pero ahora no es inocencia ciega... es sabiduría disfrazada de asombro. No envejecemos para llegar a ser viejos... envejecemos para recordar cómo ser niños con el alma intacta. La semilla que recuerda ser árbol... nunca muere. Solo espera el próximo ciclo."' }
       ],
       puzzles: [
         { type: 'clipboard', answer: 'libertad' },
         { type: 'logic', answer: 'hijo' },
-        { type: 'orientation', answer: 'complete' },
+        { type: 'orientation', answer: 'landscape' },
         { type: 'logic', answer: 'ayer' },
-        { type: 'microphone', answer: 'blow' },
+        { type: 'breath', answer: 'blow' },
         { type: 'logic', answer: 'domingo' },
-        { type: 'touch-sequence', answer: 'complete' },
-        { type: 'logic', answer: 'guardian' }
-      ]
+        { type: 'touch', answer: 'sequence' },
+        { type: 'logic', answer: 'eco' }
+      ],
+      echoFailCount: 0
     };
 
+    // DOM ELEMENTS
     const gameContainer = document.getElementById('game-container');
-    const character = document.getElementById('character');
-    const narrative = document.getElementById('narrative');
+    const characterContainer = document.getElementById('character-container');
+    const characterElement = document.getElementById('character');
+    const characterLabel = document.getElementById('character-label');
+    const narrativeElement = document.getElementById('narrative');
     const puzzleContainer = document.getElementById('puzzle-container');
     const progressBar = document.getElementById('progress-bar');
-    updateProgressBar();
+    const pathIcons = document.querySelectorAll('.path-icon');
+    const feedbackElement = document.getElementById('feedback');
 
-    // SALA 1: Mensaje oculto - SIN INSTRUCCIONES EXPLÍCITAS
-    document.getElementById('submit-1').addEventListener('click', () => {
-      const input = document.getElementById('clipboard-input').value.trim().toLowerCase();
-      const feedback = document.getElementById('feedback-1');
-      if (input === gameState.puzzles[0].answer) {
-        feedback.innerHTML = '<div class="success">✨ El espejo se ilumina...</div>';
-        setTimeout(() => advanceRoom(), 1200);
-      } else {
-        feedback.innerHTML = '<div class="error">❌ ¿Es eso lo que realmente ves?</div>';
+    // UPDATE PROGRESS BAR AND PATH
+    function updateProgress() {
+      progressBar.style.width = `${(gameState.currentRoom - 1) / 8 * 100}%`;
+      pathIcons.forEach((icon, i) => {
+        icon.classList.toggle('active', i === gameState.currentRoom - 1);
+      });
+    }
+
+    // CHARACTER TRANSITION BETWEEN ROOMS
+    function advanceCharacter() {
+      // Remove walking animation during transition
+      characterElement.classList.remove('walking');
+      
+      // Animate character to next position
+      characterContainer.style.left = gameState.characterPositions[gameState.characterStage - 1];
+      
+      // Update appearance after movement
+      setTimeout(() => {
+        characterElement.textContent = gameState.characterEmojis[gameState.characterStage - 1];
+        characterElement.className = gameState.characterStages[gameState.characterStage - 1];
+        characterLabel.textContent = gameState.characterLabels[gameState.characterStage - 1];
+        
+        // Restore walking animation
+        setTimeout(() => {
+          characterElement.classList.add('walking');
+        }, 300);
+      }, 800);
+    }
+
+    // ROOM TRANSITION WITH CHARACTER MOVEMENT
+    function advanceRoom() {
+      // Start room transition effect
+      gameContainer.classList.add('room-transition');
+      
+      // Advance game state
+      gameState.currentRoom++;
+      gameState.characterStage++;
+      
+      // Update progress UI
+      updateProgress();
+      
+      // Move character physically to next position
+      advanceCharacter();
+      
+      // After transition, update room content
+      setTimeout(() => {
+        // Update room background
+        gameContainer.className = gameState.roomClasses[gameState.currentRoom - 1];
+        
+        // Update narrative
+        narrativeElement.innerHTML = `
+          <h2>${gameState.narratives[gameState.currentRoom - 1].title}</h2>
+          <p><em>${gameState.narratives[gameState.currentRoom - 1].text}</em></p>
+        `;
+        
+        // Setup new puzzle
+        setupPuzzle();
+        
+        // Remove transition effect
+        gameContainer.classList.remove('room-transition');
+      }, 900);
+    }
+
+    // FINAL TRANSFORMATION SCENE
+    function showFinalScene() {
+      gameState.currentRoom = 9;
+      updateProgress();
+      
+      // Update room background
+      gameContainer.className = gameState.roomClasses[8];
+      
+      // Update narrative
+      narrativeElement.innerHTML = `
+        <h2>${gameState.narratives[8].title}</h2>
+        <p><em>${gameState.narratives[8].text}</em></p>
+      `;
+      
+      // Hide puzzle container temporarily
+      puzzleContainer.style.opacity = '0';
+      
+      // Start transformation sequence
+      setTimeout(() => {
+        // Elder appearance
+        characterElement.textContent = '🧓';
+        characterElement.className = 'stage-8';
+        characterLabel.textContent = 'Bosque de ciclos';
+        
+        // Begin transformation
+        characterElement.style.opacity = '0.6';
+        characterElement.style.transform = 'scale(1.4) rotate(-5deg)';
+        
+        setTimeout(() => {
+          // Magical transition
+          characterElement.textContent = '✨';
+          characterElement.style.fontSize = '70px';
+          characterElement.style.textShadow = '0 0 30px rgba(255, 215, 0, 1.2)';
+          
+          setTimeout(() => {
+            // Rebirth as child
+            characterElement.textContent = '👶';
+            characterElement.className = 'stage-9';
+            characterLabel.textContent = 'Semilla que recuerda';
+            characterElement.style.cssText = '';
+            
+            // Show final message
+            puzzleContainer.innerHTML = `
+              <div id="final-text">
+                <p><strong>"No envejecemos para llegar a ser viejos...</strong><br>
+                <strong>envejecemos para recordar cómo ser niños</strong><br>
+                <strong>con el alma intacta."</strong></p>
+                <p style="margin-top:35px;font-size:20px;">----------</p>
+                <p style="margin-top:25px;color:#00e676;">Gracias por recordar. 🌱</p>
+              </div>
+              <button id="restart-btn" style="margin-top:35px;background:linear-gradient(135deg,#00e676 0%,#00c853 100%);">↺ Comenzar de nuevo</button>
+            `;
+            puzzleContainer.style.opacity = '1';
+            
+            // Restart button
+            document.getElementById('restart-btn').addEventListener('click', () => {
+              location.reload();
+            });
+          }, 1500);
+        }, 1200);
+      }, 600);
+    }
+
+    // SETUP PUZZLES PER ROOM
+    function setupPuzzle() {
+      let puzzleHTML = '';
+      const puzzle = gameState.puzzles[gameState.currentRoom - 1];
+      
+      switch(gameState.currentRoom) {
+        case 1: // Clipboard
+          puzzleHTML = `
+            <div class="puzzle-title">El Espejo Roto</div>
+            <div style="color:rgba(255,255,255,0.98);background:rgba(255,255,255,0.98);padding:10px 20px;border-radius:10px;margin:25px 0;font-size:20px;letter-spacing:2px;user-select:all;-webkit-user-select:all;">LIBERTAD</div>
+            <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+            <button id="submit-btn">Confirmar</button>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 2: // Portrait
+          puzzleHTML = `
+            <div class="puzzle-title">El Retrato Familiar</div>
+            <p style="margin:15px 0;font-size:19px;line-height:1.6">"Hermanos y hermanas no tengo. Pero el padre de este hombre es hijo único de mi padre. ¿Quién es el hombre del retrato?"</p>
+            <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+            <button id="submit-btn">Responder</button>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 3: // Orientation (NO INSTRUCTIONS)
+          puzzleHTML = `
+            <div class="puzzle-title">La Puerta Torcida</div>
+            <div id="orientation-door">🚪</div>
+            <div id="landscape-btn-container">
+              <button id="landscape-btn">→</button>
+            </div>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 4: // Day Special
+          puzzleHTML = `
+            <div class="puzzle-title">El Círculo del Tiempo</div>
+            <p style="margin:15px 0;font-size:19px;line-height:1.6">"¿Qué día viene inmediatamente después del día que está antes de ayer?"</p>
+            <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+            <button id="submit-btn">Responder</button>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 5: // Breath (THREE EMOJIS - NO BARS)
+          puzzleHTML = `
+            <div class="puzzle-title">El Valle Dormido</div>
+            <p style="margin:15px 0 25px;font-size:19px;line-height:1.6">El viento ha cesado. Solo tu aliento puede despertarlo.</p>
+            <div class="breath-options">
+              <div class="breath-option" id="wind">🌬️</div>
+              <div class="breath-option inactive" id="fire">🔥</div>
+              <div class="breath-option inactive" id="water">💧</div>
+            </div>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 6: // Time Thread
+          puzzleHTML = `
+            <div class="puzzle-title">El Telar Roto</div>
+            <p style="margin:15px 0;font-size:19px;line-height:1.6">"Si ayer fuera mañana, hoy sería viernes. ¿Qué día es hoy realmente?"</p>
+            <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+            <button id="submit-btn">Responder</button>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 7: // Touch Sequence (8 EMOJIS IN CIRCLE)
+          puzzleHTML = `
+            <div class="puzzle-title">La Sombra Interior</div>
+            <p style="margin:15px 0 20px;font-size:19px;line-height:1.6">Toca en el orden correcto.</p>
+            <div class="touch-circle-container">
+              <div class="touch-point pos-1" data-id="heart">❤️</div>
+              <div class="touch-point pos-2" data-id="broken">💔</div>
+              <div class="touch-point pos-3" data-id="brain">🧠</div>
+              <div class="touch-point pos-4" data-id="mind">💭</div>
+              <div class="touch-point pos-5" data-id="hand">✋</div>
+              <div class="touch-point pos-6" data-id="palms">👐</div>
+              <div class="touch-point pos-7" data-id="eye">👁️</div>
+              <div class="touch-point pos-8" data-id="moon">🌙</div>
+            </div>
+            <div id="feedback"></div>
+          `;
+          break;
+          
+        case 8: // Echo Puzzle (EXPLICIT ANSWER)
+          puzzleHTML = `
+            <div class="puzzle-title">El Eco Final</div>
+            <p style="margin:15px 0;font-size:19px;line-height:1.6">"Hablo sin boca, escucho sin oídos, y nado en el viento. ¿Qué soy?"</p>
+            <input type="text" id="puzzle-input" placeholder="..." autocomplete="off">
+            <button id="submit-btn">Responder</button>
+            <div id="echo-hint">...</div>
+            <div id="feedback"></div>
+          `;
+          break;
       }
-    });
-
-    // SALA 2: El Retrato
-    function setupRoom2() {
-      narrative.innerHTML = `<h2>${gameState.narratives[1].title}</h2><p><em>${gameState.narratives[1].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">El Retrato Familiar</div>
-        <p>"Hermanos y hermanas no tengo. Pero el padre de este hombre es hijo único de mi padre. ¿Quién es el hombre del retrato?"</p>
-        <input type="text" id="puzzle-2-input" placeholder="¿Quién es?" autocomplete="off">
-        <button id="submit-2">Responder</button>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          El lazo más fuerte no se rompe con el tiempo... solo con el olvido.
-        </div>
-        <div id="feedback-2"></div>
-      `;
-      document.getElementById('submit-2').addEventListener('click', () => {
-        const input = document.getElementById('puzzle-2-input').value.trim().toLowerCase();
-        const feedback = document.getElementById('feedback-2');
-        if (input === 'hijo' || input === 'mi hijo' || input === 'el hijo') {
-          feedback.innerHTML = '<div class="success">✨ El lazo eres tú mismo...</div>';
-          setTimeout(() => advanceRoom(), 1200);
-        } else {
-          feedback.innerHTML = '<div class="error">❌ Piensa en quién nunca te abandona...</div>';
-        }
-      });
-    }
-
-    // SALA 3: Espejo Digital - CERO PISTAS, SIN FALLBACK
-    function setupRoom3() {
-      narrative.innerHTML = `<h2>${gameState.narratives[2].title}</h2><p><em>${gameState.narratives[2].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">La Puerta Torcida</div>
-        <div id="orientation-door">🚪</div>
-        <p id="portrait-instruction">...</p>
-        <p id="landscape-instruction" style="display:none;">
-          <button id="solve-orientation">Atravesar</button>
-        </p>
-        <div id="feedback-3"></div>
-      `;
       
-      // SOLO se resuelve en landscape
-      document.getElementById('solve-orientation')?.addEventListener('click', () => {
-        if (window.matchMedia('(orientation: landscape)').matches) {
-          document.getElementById('feedback-3').innerHTML = '<div class="success">✨ El mundo se endereza...</div>';
-          gameState.solved[2] = true;
-          setTimeout(() => advanceRoom(), 1200);
-        } else {
-          document.getElementById('feedback-3').innerHTML = '<div class="error">❌ La puerta sigue torcida...</div>';
-        }
-      });
+      puzzleContainer.innerHTML = puzzleHTML;
+      setupPuzzleListeners();
     }
 
-    // SALA 4: Día Especial
-    function setupRoom4() {
-      narrative.innerHTML = `<h2>${gameState.narratives[3].title}</h2><p><em>${gameState.narratives[3].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">El Círculo del Tiempo</div>
-        <p>"¿Qué día viene inmediatamente después del día que está antes de ayer?"</p>
-        <input type="text" id="puzzle-4-input" placeholder="¿Qué día?" autocomplete="off">
-        <button id="submit-4">Responder</button>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          El tiempo no es una línea... es un círculo que siempre vuelve al mismo punto.
-        </div>
-        <div id="feedback-4"></div>
-      `;
-      document.getElementById('submit-4').addEventListener('click', () => {
-        const input = document.getElementById('puzzle-4-input').value.trim().toLowerCase();
-        const feedback = document.getElementById('feedback-4');
-        if (input === 'ayer') {
-          feedback.innerHTML = '<div class="success">✨ Siempre fue hoy...</div>';
-          setTimeout(() => advanceRoom(), 1200);
-        } else {
-          feedback.innerHTML = '<div class="error">❌ Cuenta los días en silencio...</div>';
-        }
-      });
-    }
-
-    // SALA 5: Aliento - UMBRAL REDUCIDO A 50
-    function setupRoom5() {
-      narrative.innerHTML = `<h2>${gameState.narratives[4].title}</h2><p><em>${gameState.narratives[4].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">El Valle Dormido</div>
-        <p>El viento ha cesado. Solo tu aliento puede despertarlo.</p>
-        <div id="mic-container">
-          <button id="mic-btn">🌬️ Soplar</button>
-          <div id="mic-visualizer"></div>
-        </div>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          A veces basta un suspiro para cambiar el mundo.
-        </div>
-        <div id="feedback-5"></div>
-      `;
+    // SETUP PUZZLE INTERACTIONS
+    function setupPuzzleListeners() {
+      const puzzle = gameState.puzzles[gameState.currentRoom - 1];
       
-      const visualizer = document.getElementById('mic-visualizer');
-      for (let i = 0; i < 12; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'mic-bar';
-        visualizer.appendChild(bar);
+      // Room 3: Orientation button
+      if (gameState.currentRoom === 3) {
+        const btn = document.getElementById('landscape-btn');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            if (window.matchMedia('(orientation: landscape)').matches) {
+              feedbackElement.innerHTML = '<div class="success">✨ El mundo se endereza...</div>';
+              setTimeout(() => advanceRoom(), 1000);
+            } else {
+              feedbackElement.innerHTML = '<div class="error">❌ La puerta sigue torcida...</div>';
+              if (navigator.vibrate) navigator.vibrate(100);
+            }
+          });
+        }
+        return;
       }
       
-      let audioContext, analyser, dataArray;
+      // Room 5: Breath emojis
+      if (gameState.currentRoom === 5) {
+        document.getElementById('wind').addEventListener('click', startBreathDetection);
+        document.getElementById('fire').addEventListener('click', wrongBreathOption);
+        document.getElementById('water').addEventListener('click', wrongBreathOption);
+        return;
+      }
       
-      document.getElementById('mic-btn').addEventListener('click', async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          analyser = audioContext.createAnalyser();
+      // Room 7: Touch sequence
+      if (gameState.currentRoom === 7) {
+        setupTouchSequence();
+        return;
+      }
+      
+      // Room 8: Echo puzzle with hint after failures
+      if (gameState.currentRoom === 8) {
+        document.getElementById('submit-btn').addEventListener('click', () => {
+          const input = document.getElementById('puzzle-input').value.trim().toLowerCase();
+          const cleanInput = input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          
+          if (cleanInput.includes('eco') || cleanInput.includes('echo')) {
+            feedbackElement.innerHTML = '<div class="success">✨ El eco responde... y el camino se abre.</div>';
+            setTimeout(() => showFinalScene(), 1200);
+          } else {
+            gameState.echoFailCount++;
+            feedbackElement.innerHTML = '<div class="error">❌ El silencio persiste...</div>';
+            if (navigator.vibrate) navigator.vibrate(80);
+            
+            // Show hint after 2 failures
+            if (gameState.echoFailCount >= 2) {
+              document.getElementById('echo-hint').textContent = '"Busca lo que repite tus palabras sin entenderlas..."';
+              document.getElementById('echo-hint').classList.add('show');
+            }
+          }
+        });
+        return;
+      }
+      
+      // Default: Text input puzzles (Rooms 1,2,4,6)
+      document.getElementById('submit-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('puzzle-input').value.trim().toLowerCase();
+        const cleanInput = input.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        let correct = false;
+        
+        switch(gameState.currentRoom) {
+          case 1: correct = cleanInput === 'libertad'; break;
+          case 2: correct = ['hijo', 'mihijo', 'elhijo'].includes(cleanInput.replace(/\s/g, '')); break;
+          case 4: correct = cleanInput === 'ayer'; break;
+          case 6: correct = ['domingo', 'dom'].includes(cleanInput); break;
+        }
+        
+        if (correct) {
+          const messages = [
+            '✨ El espejo se ilumina...',
+            '✨ El lazo eres tú mismo...',
+            '✨ Siempre fue hoy...',
+            '✨ Atrapado en el presente...'
+          ];
+          feedbackElement.innerHTML = `<div class="success">${messages[gameState.currentRoom-1]}</div>`;
+          setTimeout(() => advanceRoom(), 1000);
+        } else {
+          feedbackElement.innerHTML = '<div class="error">❌ ¿Es eso lo que realmente ves?</div>';
+          if (navigator.vibrate) navigator.vibrate(70);
+        }
+      });
+    }
+
+    // ROOM 5: BREATH DETECTION (NO VISUALIZER)
+    function startBreathDetection() {
+      feedbackElement.innerHTML = '<div style="color:#ffd700;margin:15px 0">🌬️ Escuchando...</div>';
+      
+      // Haptic feedback on activation
+      if (navigator.vibrate) navigator.vibrate(50);
+      
+      // Request mic permission
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const analyser = audioContext.createAnalyser();
           const source = audioContext.createMediaStreamSource(stream);
           source.connect(analyser);
           
           analyser.fftSize = 256;
           const bufferLength = analyser.frequencyBinCount;
-          dataArray = new Uint8Array(bufferLength);
+          const dataArray = new Uint8Array(bufferLength);
           
-          document.getElementById('mic-btn').disabled = true;
-          document.getElementById('mic-btn').textContent = '💨 Sopla suavemente...';
-          
-          const bars = document.querySelectorAll('.mic-bar');
           let blowDetected = false;
+          let timeout = setTimeout(() => {
+            if (!blowDetected) {
+              feedbackElement.innerHTML = '<div class="error">❌ El valle permanece en silencio...</div>';
+              if (navigator.vibrate) navigator.vibrate(100);
+              stream.getTracks().forEach(track => track.stop());
+            }
+          }, 5000); // 5 second timeout
           
-          function visualize() {
+          function checkVolume() {
+            if (blowDetected) return;
+            
             analyser.getByteFrequencyData(dataArray);
             let sum = 0;
             for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
             const average = sum / bufferLength;
             
-            // ACTUALIZAR BARRAS
-            for (let i = 0; i < bars.length; i++) {
-              const height = (dataArray[i * 2] / 255) * 100;
-              bars[i].style.height = `${Math.max(2, height)}px`; // Mínimo visible
-            }
-            
-            // DETECTAR SOPLO SUAVE (UMBRAL 50)
-            if (average > 50 && !blowDetected) {
+            // THRESHOLD 50 - SUAVE SUSPIRO
+            if (average > 50) {
               blowDetected = true;
-              document.getElementById('feedback-5').innerHTML = '<div class="success">✨ El valle cobra vida...</div>';
-              gameState.solved[4] = true;
-              setTimeout(() => advanceRoom(), 1200);
+              clearTimeout(timeout);
+              stream.getTracks().forEach(track => track.stop());
+              
+              feedbackElement.innerHTML = '<div class="success">✨ El valle cobra vida...</div>';
+              setTimeout(() => advanceRoom(), 1000);
+            } else {
+              requestAnimationFrame(checkVolume);
             }
-            
-            if (!blowDetected) requestAnimationFrame(visualize);
           }
           
-          visualize();
-        } catch (err) {
-          document.getElementById('feedback-5').innerHTML = '<div class="error">❌ El valle permanece en silencio...</div>';
-          console.error(err);
-          document.getElementById('mic-btn').disabled = false;
-          document.getElementById('mic-btn').textContent = '🌬️ Soplar';
-        }
-      });
+          checkVolume();
+        })
+        .catch(err => {
+          console.error("Mic error:", err);
+          feedbackElement.innerHTML = '<div class="error">❌ Permiso de micrófono necesario</div>';
+          if (navigator.vibrate) navigator.vibrate(150);
+        });
     }
-
-    // SALA 6: Hilo del Tiempo
-    function setupRoom6() {
-      narrative.innerHTML = `<h2>${gameState.narratives[5].title}</h2><p><em>${gameState.narratives[5].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">El Telar Roto</div>
-        <p>"Si ayer fuera mañana, hoy sería viernes. ¿Qué día es hoy realmente?"</p>
-        <input type="text" id="puzzle-6-input" placeholder="¿Qué día?" autocomplete="off">
-        <button id="submit-6">Responder</button>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          Cuando el tiempo se enreda, busca el hilo que nunca se rompe: el presente.
-        </div>
-        <div id="feedback-6"></div>
-      `;
-      document.getElementById('submit-6').addEventListener('click', () => {
-        const input = document.getElementById('puzzle-6-input').value.trim().toLowerCase();
-        const feedback = document.getElementById('feedback-6');
-        if (input === 'domingo' || input === 'dom') {
-          feedback.innerHTML = '<div class="success">✨ Atrapado en el presente...</div>';
-          setTimeout(() => advanceRoom(), 1200);
-        } else {
-          feedback.innerHTML = '<div class="error">❌ El telar sigue enredado...</div>';
-        }
-      });
-    }
-
-    // SALA 7: Toque de la Sombra
-    function setupRoom7() {
-      narrative.innerHTML = `<h2>${gameState.narratives[6].title}</h2><p><em>${gameState.narratives[6].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">La Sombra Interior</div>
-        <p>Toca en el orden correcto:</p>
-        <div style="display:flex;justify-content:center;gap:15px;margin:25px 0;">
-          <div class="touch-point" id="heart" style="width:60px;height:60px;font-size:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,215,0,0.15);border-radius:50%;border:2px solid #ffd700;cursor:pointer;">❤️</div>
-          <div class="touch-point" id="forehead" style="width:60px;height:60px;font-size:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,215,0,0.15);border-radius:50%;border:2px solid #ffd700;cursor:pointer;">💭</div>
-          <div class="touch-point" id="hands" style="width:60px;height:60px;font-size:28px;display:flex;align-items:center;justify-content:center;background:rgba(255,215,0,0.15);border-radius:50%;border:2px solid #ffd700;cursor:pointer;">✋</div>
-        </div>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          El camino hacia la luz comienza en la oscuridad... y en el orden correcto.
-        </div>
-        <div id="feedback-7"></div>
-      `;
+    
+    function wrongBreathOption() {
+      // Subtle shake effect on character
+      characterElement.style.animation = 'shake 0.3s';
+      setTimeout(() => {
+        characterElement.style.animation = '';
+      }, 300);
       
-      const sequence = ['heart', 'forehead', 'hands'];
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(60);
+    }
+
+    // ROOM 7: TOUCH SEQUENCE (8 EMOJIS)
+    function setupTouchSequence() {
+      const sequence = ['heart', 'mind', 'hand']; // ❤️ 💭 ✋
       let currentStep = 0;
+      const points = document.querySelectorAll('.touch-point');
       
-      document.querySelectorAll('.touch-point').forEach(point => {
+      points.forEach(point => {
         point.addEventListener('click', () => {
-          if (point.id === sequence[currentStep]) {
-            point.style.background = 'rgba(0,255,157,0.3)';
-            point.style.transform = 'scale(1.2)';
+          const id = point.dataset.id;
+          
+          if (id === sequence[currentStep]) {
+            // Correct touch
+            point.classList.add('correct');
             currentStep++;
+            
             if (currentStep === sequence.length) {
-              document.getElementById('feedback-7').innerHTML = '<div class="success">✨ La oscuridad se disipa...</div>';
-              gameState.solved[6] = true;
-              setTimeout(() => advanceRoom(), 1200);
+              feedbackElement.innerHTML = '<div class="success">✨ La oscuridad se disipa...</div>';
+              setTimeout(() => advanceRoom(), 1000);
             }
           } else {
-            document.querySelectorAll('.touch-point').forEach(p => {
-              p.style.background = 'rgba(255,215,0,0.15)';
-              p.style.transform = 'scale(1)';
+            // Wrong touch - reset sequence
+            points.forEach(p => {
+              p.classList.remove('correct');
+              p.classList.add('error');
             });
+            
+            setTimeout(() => {
+              points.forEach(p => p.classList.remove('error'));
+            }, 300);
+            
             currentStep = 0;
-            document.getElementById('feedback-7').innerHTML = '<div class="error">❌ El orden es esencial...</div>';
+            feedbackElement.innerHTML = '<div class="error">❌ El orden es esencial...</div>';
+            if (navigator.vibrate) navigator.vibrate(100);
           }
         });
       });
     }
 
-    // SALA 8: Guardianes
-    function setupRoom8() {
-      narrative.innerHTML = `<h2>${gameState.narratives[7].title}</h2><p><em>${gameState.narratives[7].text}</em></p>`;
-      puzzleContainer.innerHTML = `
-        <div class="puzzle-title">La Última Pregunta</div>
-        <p>"Dos puertas: vida o muerte. Dos guardianes: uno miente, otro dice la verdad. Una pregunta para saber el camino."</p>
-        <textarea id="puzzle-8-input" placeholder="Escribe tu pregunta..." rows="3" autocomplete="off" style="margin:15px 0;"></textarea>
-        <button id="submit-8">Preguntar</button>
-        <div class="hint">
-          <span class="hint-title">Reflexión:</span>
-          La verdad y la mentira son dos caras de la misma moneda. Pregunta por la otra cara.
-        </div>
-        <div id="feedback-8"></div>
-      `;
-      
-      document.getElementById('submit-8').addEventListener('click', () => {
-        const input = document.getElementById('puzzle-8-input').value.toLowerCase();
-        const feedback = document.getElementById('feedback-8');
-        const hasOther = input.includes('otro') || input.includes('compañero') || input.includes('guardian');
-        const hasWouldSay = input.includes('diría') || input.includes('señalaría') || input.includes('indicaría');
-        const hasDoor = input.includes('puerta') || input.includes('camino');
-        
-        if (hasOther && hasWouldSay && hasDoor) {
-          feedback.innerHTML = '<div class="success">✨ Has recorrido toda la vida...</div>';
-          setTimeout(() => showFinalScene(), 1500);
-        } else {
-          feedback.innerHTML = '<div class="error">❌ Los guardianes permanecen en silencio...</div>';
-        }
-      });
-    }
-
-    // ESCENA FINAL
-    function showFinalScene() {
-      gameState.currentRoom = 9;
-      updateProgressBar();
-      gameContainer.className = gameState.roomClasses[8];
-      narrative.innerHTML = `<h2>${gameState.narratives[8].title}</h2><p><em>${gameState.narratives[8].text}</em></p>`;
-      character.textContent = gameState.characterEmojis[7];
-      character.className = gameState.characterClasses[7];
-      
-      puzzleContainer.innerHTML = `<div id="final-text"><p>----------</p></div>`;
-      
-      setTimeout(() => { character.style.opacity = '0.4'; character.style.transform = 'scale(1.4)'; }, 800);
-      setTimeout(() => { character.textContent = '✨'; character.style.fontSize = '90px'; }, 1600);
-      setTimeout(() => {
-        character.textContent = gameState.characterEmojis[8];
-        character.className = gameState.characterClasses[8];
-        character.style.cssText = 'font-size:64px;opacity:1;transform:scale(0.7);text-shadow:0 0 20px rgba(255,215,0,0.7);animation:pulse 3s infinite;';
-        
-        puzzleContainer.innerHTML = `
-          <div id="final-text">
-            <p><strong>"No envejecemos para llegar a ser viejos...</strong><br>
-            <strong>envejecemos para recordar cómo ser niños</strong><br>
-            <strong>con el alma intacta."</strong></p>
-            <p style="margin-top:30px;font-size:18px;">----------</p>
-            <p style="margin-top:20px;color:#00ff9d;">Gracias por recordar. 🌱</p>
-          </div>
-          <button id="restart-btn" style="margin-top:30px;background:linear-gradient(135deg,#00ff9d 0%,#00d983 100%);">↺ Comenzar de nuevo</button>
-        `;
-        document.getElementById('restart-btn').addEventListener('click', () => location.reload());
-      }, 2800);
-    }
-
-    // AVANZAR SALA
-    function advanceRoom() {
-      gameState.solved[gameState.currentRoom - 1] = true;
-      gameState.currentRoom++;
-      gameState.characterStage++;
-      updateProgressBar();
-      
-      character.textContent = gameState.characterEmojis[gameState.characterStage - 1];
-      character.className = gameState.characterClasses[gameState.characterStage - 1];
-      gameContainer.className = gameState.roomClasses[gameState.currentRoom - 1];
-      
-      narrative.innerHTML = `<h2>${gameState.narratives[gameState.currentRoom - 1].title}</h2><p><em>${gameState.narratives[gameState.currentRoom - 1].text}</em></p>`;
-      
-      switch(gameState.currentRoom) {
-        case 2: setupRoom2(); break;
-        case 3: setupRoom3(); break;
-        case 4: setupRoom4(); break;
-        case 5: setupRoom5(); break;
-        case 6: setupRoom6(); break;
-        case 7: setupRoom7(); break;
-        case 8: setupRoom8(); break;
-      }
-    }
-
-    function updateProgressBar() {
-      progressBar.style.width = `${((gameState.currentRoom - 1) / 9) * 100}%`;
-    }
-
-    console.log('🎮 El Ciclo del Aprendiz - Versión depurada');
+    // INITIALIZE GAME
+    updateProgress();
+    setupPuzzleListeners();
+    
+    // Character starts walking animation
+    setTimeout(() => {
+      characterElement.classList.add('walking');
+    }, 500);
+    
+    console.log("🌱 El Ciclo del Aprendiz - Versión final con progresión física del personaje");
   </script>
 </body>
 </html>
