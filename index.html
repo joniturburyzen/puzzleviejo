@@ -193,58 +193,36 @@
       75% { transform: translateX(5px); }
     }
 
-    #gyro-container {
-      width: 100%;
-      height: 200px;
-      background: rgba(30, 30, 40, 0.8);
-      border-radius: 15px;
+    #orientation-door {
+      font-size: 80px;
       margin: 20px 0;
-      position: relative;
-      overflow: hidden;
-      border: 2px solid #ffd700;
+      transition: transform 0.5s ease;
+      display: inline-block;
     }
 
-    #ball {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      background: radial-gradient(circle, #ffd700 0%, #ff6b6b 100%);
-      border-radius: 50%;
-      box-shadow: 0 0 20px #ffd700;
-      transition: transform 0.1s ease;
+    @media (orientation: landscape) {
+      #portrait-instruction {
+        display: none !important;
+      }
+      #landscape-instruction {
+        display: block !important;
+      }
+      #orientation-door {
+        transform: rotate(0deg) !important;
+      }
     }
 
-    .touch-sequence {
-      display: flex;
-      justify-content: space-around;
-      margin: 30px 0;
-      width: 100%;
+    #portrait-instruction, #landscape-instruction {
+      margin: 20px 0;
+      font-size: 20px;
+      font-weight: bold;
     }
 
-    .touch-point {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 40px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: rgba(255, 215, 0, 0.2);
-      border: 3px solid #ffd700;
-    }
-
-    .touch-point.active {
-      background: rgba(255, 107, 107, 0.4);
-      transform: scale(1.2);
-      box-shadow: 0 0 20px #ff6b6b;
-    }
-
-    .touch-point.success {
-      background: rgba(0, 255, 157, 0.4);
-      transform: scale(1.3);
-      box-shadow: 0 0 30px #00ff9d;
+    #fallback-btn {
+      margin-top: 20px;
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid #ff6b6b;
+      display: none;
     }
 
     #mic-container {
@@ -355,7 +333,7 @@
     // Game state
     const gameState = {
       currentRoom: 1,
-      characterStage: 1, // 1: niño pequeño, 2: niño, 3: pre-adol, 4: adolescente, 5: joven, 6: adulto joven, 7: adulto, 8: anciano, 9: niño renacido
+      characterStage: 1,
       solved: [false, false, false, false, false, false, false, false],
       characterEmojis: ['👶', '👦', '🧒', '🧑', '👨', '🧔', '👴', '🧓', '👶'],
       characterClasses: ['small', 'medium', 'medium', 'large', 'large', 'xlarge', 'xlarge', 'elder', 'small'],
@@ -370,8 +348,8 @@
           text: '"Brote que pregunta... ¿quién es el único lazo que el tiempo no puede romper?"'
         },
         {
-          title: '🌍 Sala 3: El Laberinto Flotante',
-          text: '"Tallo que busca el sol... el mundo no siempre es estable. Pero tú puedes encontrar tu centro sin tocarlo."'
+          title: '🚪 Sala 3: El Espejo Digital',
+          text: '"Tallo que busca el sol... mi mundo está torcido. Endereza tu realidad para encontrar el camino."'
         },
         {
           title: '⏰ Sala 4: La Torre del Tiempo',
@@ -401,7 +379,7 @@
       puzzles: [
         { type: 'clipboard', answer: 'libertad' },
         { type: 'logic', answer: 'hijo' },
-        { type: 'gyroscope', answer: 'complete' },
+        { type: 'orientation', answer: 'complete' },
         { type: 'logic', answer: 'ayer' },
         { type: 'microphone', answer: 'blow' },
         { type: 'logic', answer: 'domingo' },
@@ -465,7 +443,7 @@
       });
     }
 
-    // Puzzle 3: Gyroscope (Device Orientation)
+    // Puzzle 3: Orientation (Landscape Mode) - REPLACED GYROSCOPE
     function setupRoom3() {
       narrative.innerHTML = `
         <h2>${gameState.narratives[2].title}</h2>
@@ -473,105 +451,40 @@
       `;
       
       puzzleContainer.innerHTML = `
-        <div class="puzzle-title">🌍 Eje del Mundo</div>
-        <p>Inclina tu dispositivo para guiar la esfera dorada a través del laberinto flotante.</p>
-        <div id="gyro-container">
-          <div id="ball"></div>
-        </div>
+        <div class="puzzle-title">🚪 El Espejo Digital</div>
+        <div id="orientation-door">🚪</div>
+        <p id="portrait-instruction">⚠️ <strong>Gira tu dispositivo horizontalmente</strong> para enderezar la puerta</p>
+        <p id="landscape-instruction" style="display:none;">✅ ¡Perfecto! La puerta está enderezada. <button id="solve-orientation">Atravesar la puerta</button></p>
+        <button id="fallback-btn" class="secondary">¿No puedes girar el dispositivo? (Continuar igual)</button>
         <div class="hint">
           <span class="hint-title">Pista:</span>
-          Mueve tu teléfono lentamente. La esfera sigue la gravedad.
-        </div>
-        <div id="gyro-fallback" style="margin-top: 20px; display: none;">
-          <p>¿No tienes giroscopio? Usa los botones:</p>
-          <button id="left-btn">← Izquierda</button>
-          <button id="right-btn">→ Derecha</button>
-          <button id="up-btn">↑ Arriba</button>
-          <button id="down-btn">↓ Abajo</button>
+          Gira tu teléfono como si fueras a ver un vídeo en YouTube.
         </div>
         <div id="feedback-3"></div>
       `;
       
-      const ball = document.getElementById('ball');
-      let ballX = 50;
-      let ballY = 50;
+      // Show fallback after 10 seconds
+      setTimeout(() => {
+        document.getElementById('fallback-btn').style.display = 'block';
+      }, 10000);
       
-      // Check if device orientation is supported
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', (event) => {
-          if (!gameState.solved[2]) {
-            // Use gamma (left/right) and beta (front/back)
-            ballX += event.gamma * 0.1;
-            ballY -= event.beta * 0.1;
-            
-            // Keep ball within bounds
-            ballX = Math.max(0, Math.min(100, ballX));
-            ballY = Math.max(0, Math.min(100, ballY));
-            
-            ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
-            
-            // Check if ball reached the "goal" (bottom right)
-            if (ballX > 85 && ballY > 85) {
-              document.getElementById('feedback-3').innerHTML = '<div class="success">✨ ¡Lo lograste! Has encontrado tu centro.</div>';
-              gameState.solved[2] = true;
-              setTimeout(() => advanceRoom(), 1500);
-            }
-          }
-        });
-        
-        // Request permission for iOS
-        window.addEventListener('click', () => {
-          if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-            DeviceOrientationEvent.requestPermission()
-              .then(permissionState => {
-                if (permissionState === 'granted') {
-                  window.addEventListener('deviceorientation', () => {});
-                }
-              })
-              .catch(console.error);
-          }
-        }, { once: true });
-      } else {
-        // Fallback controls
-        document.getElementById('gyro-fallback').style.display = 'block';
-        
-        document.getElementById('left-btn').addEventListener('click', () => {
-          ballX = Math.max(0, ballX - 10);
-          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
-          checkGyroGoal();
-        });
-        
-        document.getElementById('right-btn').addEventListener('click', () => {
-          ballX = Math.min(100, ballX + 10);
-          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
-          checkGyroGoal();
-        });
-        
-        document.getElementById('up-btn').addEventListener('click', () => {
-          ballY = Math.max(0, ballY - 10);
-          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
-          checkGyroGoal();
-        });
-        
-        document.getElementById('down-btn').addEventListener('click', () => {
-          ballY = Math.min(100, ballY + 10);
-          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
-          checkGyroGoal();
-        });
-      }
-      
-      function checkGyroGoal() {
-        if (ballX > 85 && ballY > 85 && !gameState.solved[2]) {
-          document.getElementById('feedback-3').innerHTML = '<div class="success">✨ ¡Lo lograste! Has encontrado tu centro.</div>';
+      // Solve via orientation button
+      document.getElementById('solve-orientation').addEventListener('click', () => {
+        if (window.matchMedia && window.matchMedia('(orientation: landscape)').matches) {
+          document.getElementById('feedback-3').innerHTML = '<div class="success">✨ ¡El mundo se endereza! Has encontrado el camino.</div>';
           gameState.solved[2] = true;
           setTimeout(() => advanceRoom(), 1500);
+        } else {
+          document.getElementById('feedback-3').innerHTML = '<div class="error">❌ Gira tu dispositivo a modo horizontal primero.</div>';
         }
-      }
+      });
       
-      // Initialize ball position
-      ball.style.left = '50%';
-      ball.style.top = '50%';
-      ball.style.transform = 'translate(-50%, -50%)';
+      // Fallback button
+      document.getElementById('fallback-btn').addEventListener('click', () => {
+        document.getElementById('feedback-3').innerHTML = '<div class="success">✨ El Artesano endereza el mundo por ti...</div>';
+        gameState.solved[2] = true;
+        setTimeout(() => advanceRoom(), 1500);
+      });
     }
 
     // Puzzle 4: El Día Especial
@@ -737,9 +650,9 @@
         <div class="puzzle-title">🌑 El Toque de la Sombra</div>
         <p>Toca los puntos en el orden correcto: Corazón → Mente → Manos</p>
         <div class="touch-sequence">
-          <div class="touch-point" id="heart">❤️</div>
-          <div class="touch-point" id="forehead">💭</div>
-          <div class="touch-point" id="hands">✋</div>
+          <div class="touch-point" id="heart" style="width:70px;height:70px;font-size:30px;margin:10px;">❤️</div>
+          <div class="touch-point" id="forehead" style="width:70px;height:70px;font-size:30px;margin:10px;">💭</div>
+          <div class="touch-point" id="hands" style="width:70px;height:70px;font-size:30px;margin:10px;">✋</div>
         </div>
         <div class="hint">
           <span class="hint-title">Pista:</span>
@@ -756,7 +669,9 @@
           const id = point.id;
           
           if (id === sequence[currentStep]) {
-            point.classList.add('success');
+            point.style.background = 'rgba(0, 255, 157, 0.4)';
+            point.style.transform = 'scale(1.3)';
+            point.style.boxShadow = '0 0 20px #00ff9d';
             currentStep++;
             
             if (currentStep === sequence.length) {
@@ -767,7 +682,9 @@
           } else {
             // Reset sequence on wrong touch
             document.querySelectorAll('.touch-point').forEach(p => {
-              p.classList.remove('success');
+              p.style.background = 'rgba(255, 215, 0, 0.2)';
+              p.style.transform = 'scale(1)';
+              p.style.boxShadow = '0 0 0 #000';
             });
             currentStep = 0;
             document.getElementById('feedback-7').innerHTML = '<div class="error">❌ Orden incorrecto. Recuerda: corazón → mente → manos.</div>';
@@ -927,4 +844,3 @@
   </script>
 </body>
 </html>
-
