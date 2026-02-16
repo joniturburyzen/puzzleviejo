@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>El Ciclo del Aprendiz</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0a0a0a;
+      color: #f8f9fa;
+      height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+      transition: background 1.5s ease;
+    }
+
+    /* Room backgrounds */
+    .room-1 { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+    .room-2 { background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%); }
+    .room-3 { background: linear-gradient(135deg, #1a2a6c 0%, #2c3e50 100%); }
+    .room-4 { background: linear-gradient(135deg, #2c3e50 0%, #8e44ad 100%); }
+    .room-5 { background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%); }
+    .room-6 { background: linear-gradient(135deg, #3498db 0%, #16a085 100%); }
+    .room-7 { background: linear-gradient(135deg, #16a085 0%, #2c3e50 100%); }
+    .room-8 { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); }
+    .room-final { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+
+    #character {
+      font-size: 64px;
+      margin: 20px 0;
+      transition: transform 1.2s ease, opacity 1.2s ease;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+      animation: pulse 3s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    #character.small { transform: scale(0.7); }
+    #character.medium { transform: scale(0.9); }
+    #character.large { transform: scale(1.1); }
+    #character.xlarge { transform: scale(1.3); }
+    #character.elder { transform: scale(1.2) rotate(-5deg); opacity: 0.9; }
+
+    #narrative {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 15px;
+      padding: 25px;
+      margin: 20px 0;
+      max-width: 90%;
+      font-size: 18px;
+      line-height: 1.6;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+
+    #narrative h2 {
+      color: #ffd700;
+      margin-bottom: 15px;
+      font-size: 24px;
+    }
+
+    #narrative p {
+      margin: 10px 0;
+      color: #e0e0e0;
+    }
+
+    #puzzle-container {
+      background: rgba(20, 20, 30, 0.9);
+      border-radius: 20px;
+      padding: 30px;
+      width: 95%;
+      max-width: 500px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+      border: 3px solid rgba(255, 215, 0, 0.4);
+    }
+
+    .puzzle-title {
+      color: #ffd700;
+      font-size: 22px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 15px;
+      margin: 15px 0;
+      border: 2px solid #ffd700;
+      border-radius: 10px;
+      background: rgba(30, 30, 40, 0.9);
+      color: #ffd700;
+      font-size: 18px;
+      text-align: center;
+    }
+
+    input[type="text"]::placeholder, textarea::placeholder {
+      color: rgba(255, 215, 0, 0.5);
+    }
+
+    button {
+      background: linear-gradient(135deg, #ffd700 0%, #ff6b6b 100%);
+      color: #1a1a2e;
+      border: none;
+      padding: 15px 40px;
+      margin: 10px 5px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(255, 107, 107, 0.6);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffd700;
+      border: 2px solid #ffd700;
+    }
+
+    .hint {
+      background: rgba(255, 215, 0, 0.1);
+      border-left: 4px solid #ffd700;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 10px 10px 0;
+      text-align: left;
+      font-style: italic;
+      color: #ffd700;
+    }
+
+    .hint-title {
+      color: #ff6b6b;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .success {
+      color: #00ff9d;
+      font-weight: bold;
+      margin: 15px 0;
+      font-size: 20px;
+      animation: fadeIn 0.5s;
+    }
+
+    .error {
+      color: #ff6b6b;
+      font-weight: bold;
+      margin: 15px 0;
+      font-size: 18px;
+      animation: shake 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    #gyro-container {
+      width: 100%;
+      height: 200px;
+      background: rgba(30, 30, 40, 0.8);
+      border-radius: 15px;
+      margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #ffd700;
+    }
+
+    #ball {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: radial-gradient(circle, #ffd700 0%, #ff6b6b 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 20px #ffd700;
+      transition: transform 0.1s ease;
+    }
+
+    .touch-sequence {
+      display: flex;
+      justify-content: space-around;
+      margin: 30px 0;
+      width: 100%;
+    }
+
+    .touch-point {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 40px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(255, 215, 0, 0.2);
+      border: 3px solid #ffd700;
+    }
+
+    .touch-point.active {
+      background: rgba(255, 107, 107, 0.4);
+      transform: scale(1.2);
+      box-shadow: 0 0 20px #ff6b6b;
+    }
+
+    .touch-point.success {
+      background: rgba(0, 255, 157, 0.4);
+      transform: scale(1.3);
+      box-shadow: 0 0 30px #00ff9d;
+    }
+
+    #mic-container {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #mic-visualizer {
+      width: 100%;
+      height: 100px;
+      background: rgba(30, 30, 40, 0.8);
+      border-radius: 15px;
+      margin: 20px 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+      border: 2px solid #ffd700;
+    }
+
+    .mic-bar {
+      width: 15px;
+      height: 5px;
+      background: #ffd700;
+      margin: 0 2px;
+      border-radius: 5px;
+      transition: height 0.1s ease;
+    }
+
+    .hidden-text {
+      color: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-size: 18px;
+      user-select: all;
+      -webkit-user-select: all;
+      cursor: pointer;
+      border: 1px dashed rgba(255, 215, 0, 0.5);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.95; }
+      50% { opacity: 0.85; }
+    }
+
+    #final-text {
+      font-size: 24px;
+      line-height: 1.8;
+      color: #ffd700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+      margin: 40px 0;
+      padding: 30px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      border: 3px solid #ffd700;
+    }
+
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 8px;
+      background: rgba(255, 215, 0, 0.3);
+      z-index: 1000;
+      transition: width 0.5s ease;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    @media (max-width: 480px) {
+      #character { font-size: 50px; }
+      #narrative { font-size: 16px; padding: 20px; }
+      input[type="text"], textarea { padding: 12px; font-size: 16px; }
+      button { padding: 12px 30px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar"></div>
+  <div id="game-container" class="room-1">
+    <div id="character" class="small">👶</div>
+    <div id="narrative">
+      <h2>🌱 Sala 1: El Jardín de los Secretos</h2>
+      <p><em>"Pequeña semilla... los secretos no se esconden. Solo esperan a que aprendas a mirar sin ver."</em></p>
+    </div>
+    <div id="puzzle-container">
+      <div class="puzzle-title">📋 El Mensaje Oculto</div>
+      <p>En el espejo frente a ti, hay un mensaje que solo los ojos inocentes pueden ver...</p>
+      <div class="hidden-text" id="hidden-message">LIBERTAD</div>
+      <p>Copia el texto anterior y pégalo aquí:</p>
+      <input type="text" id="clipboard-input" placeholder="Pega el texto aquí..." autocomplete="off">
+      <button id="submit-1">Verificar</button>
+      <div class="hint">
+        <span class="hint-title">Pista:</span>
+        Selecciona todo el texto blanco (toca y arrastra) → Copia → Pega en el campo de arriba.
+      </div>
+      <div id="feedback-1"></div>
+    </div>
+  </div>
+
+  <script>
+    // Game state
+    const gameState = {
+      currentRoom: 1,
+      characterStage: 1, // 1: niño pequeño, 2: niño, 3: pre-adol, 4: adolescente, 5: joven, 6: adulto joven, 7: adulto, 8: anciano, 9: niño renacido
+      solved: [false, false, false, false, false, false, false, false],
+      characterEmojis: ['👶', '👦', '🧒', '🧑', '👨', '🧔', '👴', '🧓', '👶'],
+      characterClasses: ['small', 'medium', 'medium', 'large', 'large', 'xlarge', 'xlarge', 'elder', 'small'],
+      roomClasses: ['room-1', 'room-2', 'room-3', 'room-4', 'room-5', 'room-6', 'room-7', 'room-8', 'room-final'],
+      narratives: [
+        {
+          title: '🌱 Sala 1: El Jardín de los Secretos',
+          text: '"Pequeña semilla... los secretos no se esconden. Solo esperan a que aprendas a mirar sin ver."'
+        },
+        {
+          title: '🧩 Sala 2: El Pasillo de los Espejos',
+          text: '"Brote que pregunta... ¿quién es el único lazo que el tiempo no puede romper?"'
+        },
+        {
+          title: '🌍 Sala 3: El Laberinto Flotante',
+          text: '"Tallo que busca el sol... el mundo no siempre es estable. Pero tú puedes encontrar tu centro sin tocarlo."'
+        },
+        {
+          title: '⏰ Sala 4: La Torre del Tiempo',
+          text: '"Rama que se dobla al viento... el tiempo es un círculo roto. Encuentra el punto donde ayer y mañana se tocan."'
+        },
+        {
+          title: '💨 Sala 5: El Valle del Aliento',
+          text: '"Árbol que sostiene su primer fruto... a veces lo que falta no es fuerza. Es aliento."'
+        },
+        {
+          title: '🧵 Sala 6: El Telar de los Días',
+          text: '"Tronco que carga cicatrices... si ayer fuera mañana, ¿dónde quedaría hoy atrapado?"'
+        },
+        {
+          title: '🌑 Sala 7: La Cámara del Eco',
+          text: '"Raíz que abraza la oscuridad... la luz ciega. Solo en la sombra aprendes a ver con el alma. Toca primero tu corazón, luego tu mente, y finalmente tus manos. Así verás lo que la luz esconde."'
+        },
+        {
+          title: '🚪 Sala 8: La Puerta Final',
+          text: '"Bosque que conoce todos los ciclos... una puerta lleva al conocimiento. La otra, a la paz. Una pregunta. Una elección."'
+        },
+        {
+          title: '✨ El Regreso',
+          text: '"Mira: vuelves a ser quien eras. Pero ahora no es inocencia ciega... es sabiduría disfrazada de asombro. No envejecemos para llegar a ser viejos... envejecemos para recordar cómo ser niños con el alma intacta. La semilla que recuerda ser árbol... nunca muere. Solo espera el próximo ciclo."'
+        }
+      ],
+      puzzles: [
+        { type: 'clipboard', answer: 'libertad' },
+        { type: 'logic', answer: 'hijo' },
+        { type: 'gyroscope', answer: 'complete' },
+        { type: 'logic', answer: 'ayer' },
+        { type: 'microphone', answer: 'blow' },
+        { type: 'logic', answer: 'domingo' },
+        { type: 'touch-sequence', answer: 'complete' },
+        { type: 'logic', answer: 'guardian' }
+      ]
+    };
+
+    // DOM elements
+    const gameContainer = document.getElementById('game-container');
+    const character = document.getElementById('character');
+    const narrative = document.getElementById('narrative');
+    const puzzleContainer = document.getElementById('puzzle-container');
+    const progressBar = document.getElementById('progress-bar');
+
+    // Initialize progress bar
+    updateProgressBar();
+
+    // Puzzle 1: Clipboard API
+    document.getElementById('submit-1').addEventListener('click', () => {
+      const input = document.getElementById('clipboard-input').value.trim().toLowerCase();
+      const feedback = document.getElementById('feedback-1');
+      
+      if (input === gameState.puzzles[0].answer) {
+        feedback.innerHTML = '<div class="success">✨ ¡Correcto! El espejo se ilumina...</div>';
+        setTimeout(() => advanceRoom(), 1500);
+      } else {
+        feedback.innerHTML = '<div class="error">❌ Intenta de nuevo. ¿Qué palabra ves en el espejo?</div>';
+      }
+    });
+
+    // Puzzle 2: El Retrato
+    function setupRoom2() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[1].title}</h2>
+        <p><em>${gameState.narratives[1].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">👨‍👦 El Retrato Familiar</div>
+        <p><strong>"Hermanos y hermanas no tengo. Pero el padre de este hombre es hijo único de mi padre. ¿Quién es el hombre del retrato?"</strong></p>
+        <input type="text" id="puzzle-2-input" placeholder="¿Quién es?" autocomplete="off">
+        <button id="submit-2">Responder</button>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Piensa en tu padre. Si él es hijo único, ¿quién es el padre del hombre del retrato?
+        </div>
+        <div id="feedback-2"></div>
+      `;
+      
+      document.getElementById('submit-2').addEventListener('click', () => {
+        const input = document.getElementById('puzzle-2-input').value.trim().toLowerCase();
+        const feedback = document.getElementById('feedback-2');
+        
+        if (input === 'hijo' || input === 'mi hijo' || input === 'el hijo') {
+          feedback.innerHTML = '<div class="success">✨ ¡Correcto! El lazo eres tú mismo. Crecerás... pero nunca te abandonarás.</div>';
+          setTimeout(() => advanceRoom(), 1500);
+        } else {
+          feedback.innerHTML = '<div class="error">❌ Piensa en las relaciones familiares...</div>';
+        }
+      });
+    }
+
+    // Puzzle 3: Gyroscope (Device Orientation)
+    function setupRoom3() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[2].title}</h2>
+        <p><em>${gameState.narratives[2].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">🌍 Eje del Mundo</div>
+        <p>Inclina tu dispositivo para guiar la esfera dorada a través del laberinto flotante.</p>
+        <div id="gyro-container">
+          <div id="ball"></div>
+        </div>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Mueve tu teléfono lentamente. La esfera sigue la gravedad.
+        </div>
+        <div id="gyro-fallback" style="margin-top: 20px; display: none;">
+          <p>¿No tienes giroscopio? Usa los botones:</p>
+          <button id="left-btn">← Izquierda</button>
+          <button id="right-btn">→ Derecha</button>
+          <button id="up-btn">↑ Arriba</button>
+          <button id="down-btn">↓ Abajo</button>
+        </div>
+        <div id="feedback-3"></div>
+      `;
+      
+      const ball = document.getElementById('ball');
+      let ballX = 50;
+      let ballY = 50;
+      
+      // Check if device orientation is supported
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', (event) => {
+          if (!gameState.solved[2]) {
+            // Use gamma (left/right) and beta (front/back)
+            ballX += event.gamma * 0.1;
+            ballY -= event.beta * 0.1;
+            
+            // Keep ball within bounds
+            ballX = Math.max(0, Math.min(100, ballX));
+            ballY = Math.max(0, Math.min(100, ballY));
+            
+            ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
+            
+            // Check if ball reached the "goal" (bottom right)
+            if (ballX > 85 && ballY > 85) {
+              document.getElementById('feedback-3').innerHTML = '<div class="success">✨ ¡Lo lograste! Has encontrado tu centro.</div>';
+              gameState.solved[2] = true;
+              setTimeout(() => advanceRoom(), 1500);
+            }
+          }
+        });
+        
+        // Request permission for iOS
+        window.addEventListener('click', () => {
+          if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission()
+              .then(permissionState => {
+                if (permissionState === 'granted') {
+                  window.addEventListener('deviceorientation', () => {});
+                }
+              })
+              .catch(console.error);
+          }
+        }, { once: true });
+      } else {
+        // Fallback controls
+        document.getElementById('gyro-fallback').style.display = 'block';
+        
+        document.getElementById('left-btn').addEventListener('click', () => {
+          ballX = Math.max(0, ballX - 10);
+          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
+          checkGyroGoal();
+        });
+        
+        document.getElementById('right-btn').addEventListener('click', () => {
+          ballX = Math.min(100, ballX + 10);
+          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
+          checkGyroGoal();
+        });
+        
+        document.getElementById('up-btn').addEventListener('click', () => {
+          ballY = Math.max(0, ballY - 10);
+          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
+          checkGyroGoal();
+        });
+        
+        document.getElementById('down-btn').addEventListener('click', () => {
+          ballY = Math.min(100, ballY + 10);
+          ball.style.transform = `translate(${ballX - 15}%, ${ballY - 15}%)`;
+          checkGyroGoal();
+        });
+      }
+      
+      function checkGyroGoal() {
+        if (ballX > 85 && ballY > 85 && !gameState.solved[2]) {
+          document.getElementById('feedback-3').innerHTML = '<div class="success">✨ ¡Lo lograste! Has encontrado tu centro.</div>';
+          gameState.solved[2] = true;
+          setTimeout(() => advanceRoom(), 1500);
+        }
+      }
+      
+      // Initialize ball position
+      ball.style.left = '50%';
+      ball.style.top = '50%';
+      ball.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // Puzzle 4: El Día Especial
+    function setupRoom4() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[3].title}</h2>
+        <p><em>${gameState.narratives[3].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">📅 El Día Especial</div>
+        <p><strong>"¿Qué día viene inmediatamente después del día que está antes de ayer?"</strong></p>
+        <input type="text" id="puzzle-4-input" placeholder="¿Qué día?" autocomplete="off">
+        <button id="submit-4">Responder</button>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Dibuja esto: Anteayer → [día X] → Ayer → [día Y] → Hoy. ¿Qué es Y?
+        </div>
+        <div id="feedback-4"></div>
+      `;
+      
+      document.getElementById('submit-4').addEventListener('click', () => {
+        const input = document.getElementById('puzzle-4-input').value.trim().toLowerCase();
+        const feedback = document.getElementById('feedback-4');
+        
+        if (input === 'ayer') {
+          feedback.innerHTML = '<div class="success">✨ ¡Correcto! Ese punto es hoy. Siempre fue hoy.</div>';
+          setTimeout(() => advanceRoom(), 1500);
+        } else {
+          feedback.innerHTML = '<div class="error">❌ Cuenta los días en voz alta...</div>';
+        }
+      });
+    }
+
+    // Puzzle 5: Microphone (Blow detection)
+    function setupRoom5() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[4].title}</h2>
+        <p><em>${gameState.narratives[4].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">💨 Aliento del Cambio</div>
+        <p>Sopla en el micrófono de tu dispositivo para dar vida al valle.</p>
+        <div id="mic-container">
+          <button id="mic-btn">🎤 Activar Micrófono</button>
+          <div id="mic-visualizer"></div>
+        </div>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Sopla fuerte en el micrófono. Verás las barras subir.
+        </div>
+        <div id="feedback-5"></div>
+      `;
+      
+      // Create visualizer bars
+      const visualizer = document.getElementById('mic-visualizer');
+      for (let i = 0; i < 10; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'mic-bar';
+        visualizer.appendChild(bar);
+      }
+      
+      let audioContext = null;
+      let analyser = null;
+      let dataArray = null;
+      let animationId = null;
+      
+      document.getElementById('mic-btn').addEventListener('click', async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioContext.createAnalyser();
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(analyser);
+          
+          analyser.fftSize = 256;
+          const bufferLength = analyser.frequencyBinCount;
+          dataArray = new Uint8Array(bufferLength);
+          
+          document.getElementById('mic-btn').disabled = true;
+          document.getElementById('mic-btn').textContent = '🌬️ Sopla ahora...';
+          
+          // Visualizer animation
+          const bars = document.querySelectorAll('.mic-bar');
+          let blowDetected = false;
+          
+          function visualize() {
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Check average volume
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+              sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
+            
+            // Update bars
+            for (let i = 0; i < bars.length; i++) {
+              const height = (dataArray[i * 2] / 255) * 100;
+              bars[i].style.height = `${height}px`;
+            }
+            
+            // Detect blow (sustained high volume)
+            if (average > 120 && !blowDetected) {
+              blowDetected = true;
+              document.getElementById('feedback-5').innerHTML = '<div class="success">✨ ¡El valle cobra vida! El aliento que das... es el que recibes.</div>';
+              gameState.solved[4] = true;
+              setTimeout(() => advanceRoom(), 1500);
+            }
+            
+            animationId = requestAnimationFrame(visualize);
+          }
+          
+          visualize();
+        } catch (err) {
+          document.getElementById('feedback-5').innerHTML = '<div class="error">❌ No se pudo acceder al micrófono. ¿Lo permitiste?</div>';
+          console.error(err);
+        }
+      });
+    }
+
+    // Puzzle 6: El Hilo del Tiempo
+    function setupRoom6() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[5].title}</h2>
+        <p><em>${gameState.narratives[5].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">🧵 El Hilo del Tiempo</div>
+        <p><strong>"Si ayer fuera mañana, hoy sería viernes. ¿Qué día es hoy realmente?"</strong></p>
+        <input type="text" id="puzzle-6-input" placeholder="¿Qué día?" autocomplete="off">
+        <button id="submit-6">Responder</button>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Si HOY fuera viernes en el mundo de la pregunta... entonces MAÑANA sería sábado... y AYER (en el mundo real) sería sábado... ¿Qué día es HOY?
+        </div>
+        <div id="feedback-6"></div>
+      `;
+      
+      document.getElementById('submit-6').addEventListener('click', () => {
+        const input = document.getElementById('puzzle-6-input').value.trim().toLowerCase();
+        const feedback = document.getElementById('feedback-6');
+        
+        if (input === 'domingo' || input === 'dom') {
+          feedback.innerHTML = '<div class="success">✨ ¡Correcto! Atrapado en el presente. Donde siempre estuvo.</div>';
+          setTimeout(() => advanceRoom(), 1500);
+        } else {
+          feedback.innerHTML = '<div class="error">❌ Piensa en el viernes como punto de partida...</div>';
+        }
+      });
+    }
+
+    // Puzzle 7: Touch Sequence (Heart → Forehead → Hands)
+    function setupRoom7() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[6].title}</h2>
+        <p><em>${gameState.narratives[6].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">🌑 El Toque de la Sombra</div>
+        <p>Toca los puntos en el orden correcto: Corazón → Mente → Manos</p>
+        <div class="touch-sequence">
+          <div class="touch-point" id="heart">❤️</div>
+          <div class="touch-point" id="forehead">💭</div>
+          <div class="touch-point" id="hands">✋</div>
+        </div>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          El orden está en el diálogo: "Corazón, luego mente, finalmente manos".
+        </div>
+        <div id="feedback-7"></div>
+      `;
+      
+      const sequence = ['heart', 'forehead', 'hands'];
+      let currentStep = 0;
+      
+      document.querySelectorAll('.touch-point').forEach(point => {
+        point.addEventListener('click', () => {
+          const id = point.id;
+          
+          if (id === sequence[currentStep]) {
+            point.classList.add('success');
+            currentStep++;
+            
+            if (currentStep === sequence.length) {
+              document.getElementById('feedback-7').innerHTML = '<div class="success">✨ La oscuridad se disipa... Bienvenido a lo desconocido.</div>';
+              gameState.solved[6] = true;
+              setTimeout(() => advanceRoom(), 1500);
+            }
+          } else {
+            // Reset sequence on wrong touch
+            document.querySelectorAll('.touch-point').forEach(p => {
+              p.classList.remove('success');
+            });
+            currentStep = 0;
+            document.getElementById('feedback-7').innerHTML = '<div class="error">❌ Orden incorrecto. Recuerda: corazón → mente → manos.</div>';
+          }
+        });
+      });
+    }
+
+    // Puzzle 8: Los Guardianes
+    function setupRoom8() {
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[7].title}</h2>
+        <p><em>${gameState.narratives[7].text}</em></p>
+      `;
+      
+      puzzleContainer.innerHTML = `
+        <div class="puzzle-title">🚪 Los Dos Guardianes</div>
+        <p><strong>"Dos puertas: una lleva a la vida, otra a la muerte. Dos guardianes: uno siempre miente, el otro siempre dice verdad. Solo puedes hacer una pregunta a uno de ellos. ¿Qué preguntas para saber con certeza qué puerta elegir?"</strong></p>
+        <textarea id="puzzle-8-input" placeholder="Escribe tu pregunta..." rows="3" autocomplete="off"></textarea>
+        <button id="submit-8">Responder</button>
+        <div class="hint">
+          <span class="hint-title">Pista:</span>
+          Pregunta a un guardián qué diría el OTRO guardián sobre la puerta de la vida.
+        </div>
+        <div id="feedback-8"></div>
+      `;
+      
+      document.getElementById('submit-8').addEventListener('click', () => {
+        const input = document.getElementById('puzzle-8-input').value.toLowerCase();
+        const feedback = document.getElementById('feedback-8');
+        
+        // Check for keywords
+        const hasOther = input.includes('otro') || input.includes('compañero') || input.includes('guardian');
+        const hasWouldSay = input.includes('diría') || input.includes('señalaría') || input.includes('indicaría');
+        const hasDoor = input.includes('puerta') || input.includes('camino');
+        
+        if (hasOther && hasWouldSay && hasDoor) {
+          feedback.innerHTML = '<div class="success">✨ ¡Correcto! Has recorrido toda la vida. Desde la semilla hasta el bosque.</div>';
+          setTimeout(() => showFinalScene(), 1500);
+        } else {
+          feedback.innerHTML = '<div class="error">❌ Piensa en preguntar sobre lo que diría el OTRO guardián...</div>';
+        }
+      });
+    }
+
+    // Final scene: Character transformation back to child
+    function showFinalScene() {
+      gameState.currentRoom = 9;
+      updateProgressBar();
+      
+      gameContainer.className = gameState.roomClasses[8];
+      
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[8].title}</h2>
+        <p><em>${gameState.narratives[8].text}</em></p>
+      `;
+      
+      character.textContent = gameState.characterEmojis[7]; // Elder
+      character.className = gameState.characterClasses[7];
+      
+      puzzleContainer.innerHTML = `
+        <div id="final-text">
+          <p>----------</p>
+        </div>
+      `;
+      
+      // Animation: Elder → Child transformation
+      setTimeout(() => {
+        character.style.opacity = '0.5';
+        character.style.transform = 'scale(1.5)';
+      }, 1000);
+      
+      setTimeout(() => {
+        character.textContent = '✨';
+        character.style.fontSize = '100px';
+      }, 2000);
+      
+      setTimeout(() => {
+        character.textContent = gameState.characterEmojis[8]; // Child
+        character.className = gameState.characterClasses[8];
+        character.style.opacity = '1';
+        character.style.transform = 'scale(0.7)';
+        character.style.fontSize = '64px';
+        
+        puzzleContainer.innerHTML = `
+          <div id="final-text">
+            <p><strong>"No envejecemos para llegar a ser viejos...</strong><br>
+            <strong>envejecemos para recordar cómo ser niños</strong><br>
+            <strong>con el alma intacta."</strong></p>
+            <p style="margin-top: 30px; font-size: 18px;">----------</p>
+            <p style="margin-top: 20px; color: #00ff9d;">Gracias por recordar. 🌱</p>
+          </div>
+          <button id="restart-btn" style="margin-top: 30px; background: linear-gradient(135deg, #00ff9d 0%, #00d983 100%);">↺ Volver a empezar</button>
+        `;
+        
+        document.getElementById('restart-btn').addEventListener('click', () => {
+          location.reload();
+        });
+      }, 3500);
+    }
+
+    // Advance to next room
+    function advanceRoom() {
+      gameState.solved[gameState.currentRoom - 1] = true;
+      gameState.currentRoom++;
+      gameState.characterStage++;
+      
+      updateProgressBar();
+      
+      // Update character
+      character.textContent = gameState.characterEmojis[gameState.characterStage - 1];
+      character.className = gameState.characterClasses[gameState.characterStage - 1];
+      
+      // Update room background
+      gameContainer.className = gameState.roomClasses[gameState.currentRoom - 1];
+      
+      // Update narrative
+      narrative.innerHTML = `
+        <h2>${gameState.narratives[gameState.currentRoom - 1].title}</h2>
+        <p><em>${gameState.narratives[gameState.currentRoom - 1].text}</em></p>
+      `;
+      
+      // Setup next puzzle
+      switch(gameState.currentRoom) {
+        case 2:
+          setupRoom2();
+          break;
+        case 3:
+          setupRoom3();
+          break;
+        case 4:
+          setupRoom4();
+          break;
+        case 5:
+          setupRoom5();
+          break;
+        case 6:
+          setupRoom6();
+          break;
+        case 7:
+          setupRoom7();
+          break;
+        case 8:
+          setupRoom8();
+          break;
+      }
+    }
+
+    // Update progress bar
+    function updateProgressBar() {
+      const progress = ((gameState.currentRoom - 1) / 9) * 100;
+      progressBar.style.width = `${progress}%`;
+    }
+
+    // Initialize game
+    console.log('🎮 El Ciclo del Aprendiz - Iniciado');
+  </script>
+</body>
+</html>
+
